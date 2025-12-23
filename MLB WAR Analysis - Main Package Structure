@@ -1,0 +1,105 @@
+"""
+MLB WAR & Contract Value Analysis System
+Main package structure and configuration
+"""
+
+import os
+from pathlib import Path
+
+# Project structure
+PROJECT_ROOT = Path(__file__).parent
+DATA_DIR = PROJECT_ROOT / "data"
+RAW_DATA_DIR = DATA_DIR / "raw"
+PROCESSED_DATA_DIR = DATA_DIR / "processed"
+OUTPUTS_DIR = PROJECT_ROOT / "outputs"
+
+# Create directories
+for dir_path in [RAW_DATA_DIR, PROCESSED_DATA_DIR, OUTPUTS_DIR]:
+    dir_path.mkdir(parents=True, exist_ok=True)
+
+# Data source configurations
+DATA_SOURCES = {
+    "war": {
+        "baseball_reference": {
+            "url": "https://www.baseball-reference.com/data/war_daily_bat.txt",
+            "type": "csv",
+            "requires_api_key": False,
+            "notes": "Historical batting WAR data (daily)"
+        },
+        "fangraphs": {
+            "url": "https://www.fangraphs.com/api/leaders/major-league/data",
+            "type": "api",
+            "requires_api_key": False,
+            "notes": "Advanced metrics including WAR"
+        },
+        "lahman": {
+            "url": "https://github.com/chadwickbureau/baseballdatabank",
+            "type": "github",
+            "requires_api_key": False,
+            "notes": "Historical baseball database (CSV format)"
+        }
+    },
+    "contracts": {
+        "spotrac": {
+            "url": "https://www.spotrac.com/mlb/contracts/",
+            "type": "scrape",
+            "requires_api_key": False,
+            "notes": "Contract data - requires web scraping"
+        },
+        "cots": {
+            "url": "https://legacy.baseballprospectus.com/compensation/",
+            "type": "scrape",
+            "requires_api_key": False,
+            "notes": "Cot's Baseball Contracts archive"
+        }
+    }
+}
+
+# Analysis parameters
+ANALYSIS_CONFIG = {
+    "start_year": 1985,
+    "age_brackets": [(20, 21), (22, 23), (24, 25), (26, 27), (28, 29), (30, 35), (36, 40)],
+    "positions": ["P", "C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"],
+    "war_types": ["bWAR", "fWAR"],  # Baseball-Reference and FanGraphs WAR
+}
+
+# Database schema
+DB_SCHEMA = {
+    "player_war": """
+        CREATE TABLE IF NOT EXISTS player_war (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            year INTEGER NOT NULL,
+            player_id VARCHAR(50) NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            age INTEGER,
+            position VARCHAR(10),
+            war REAL,
+            games_played INTEGER,
+            UNIQUE(year, player_id)
+        )
+    """,
+    "contracts_arbitration": """
+        CREATE TABLE IF NOT EXISTS contracts_arbitration (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player_id VARCHAR(50) NOT NULL,
+            year INTEGER NOT NULL,
+            salary REAL,
+            total_value REAL,
+            contract_length INTEGER,
+            UNIQUE(player_id, year)
+        )
+    """,
+    "contracts_free_agency": """
+        CREATE TABLE IF NOT EXISTS contracts_free_agency (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player_id VARCHAR(50) NOT NULL,
+            year INTEGER NOT NULL,
+            salary REAL,
+            total_value REAL,
+            contract_length INTEGER,
+            UNIQUE(player_id, year)
+        )
+    """
+}
+
+__version__ = "1.0.0"
